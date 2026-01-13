@@ -112,13 +112,16 @@ subset_idx = np.random.choice(len(X_train_full), subset_size, replace=False)
 X_sub = X_train_full[subset_idx]
 y_sub = y_train_full[subset_idx]
 
-print(f"Data Loaded. Full Train: {X_train_full.shape}, Validation: {X_val.shape}")
-print(f"Optimization will run on subset size: {X_sub.shape[0]}")
+# Open results file
+results_file = open('optimization_results.txt', 'w')
+
+results_file.write(f"Data Loaded. Full Train: {X_train_full.shape}, Validation: {X_val.shape}\n")
+results_file.write(f"Optimization will run on subset size: {X_sub.shape[0]}\n\n")
 
 # Check for NaN/Inf values
-print(f"NaN values in X_sub: {np.isnan(X_sub).sum()}, y_sub: {np.isnan(y_sub).sum()}")
-print(f"Inf values in X_sub: {np.isinf(X_sub).sum()}, y_sub: {np.isinf(y_sub).sum()}")
-print(f"Data ranges - X_sub: [{X_sub.min():.3f}, {X_sub.max():.3f}], y_sub: [{y_sub.min():.3f}, {y_sub.max():.3f}]")
+results_file.write(f"NaN values in X_sub: {np.isnan(X_sub).sum()}, y_sub: {np.isnan(y_sub).sum()}\n")
+results_file.write(f"Inf values in X_sub: {np.isinf(X_sub).sum()}, y_sub: {np.isinf(y_sub).sum()}\n")
+results_file.write(f"Data ranges - X_sub: [{X_sub.min():.3f}, {X_sub.max():.3f}], y_sub: [{y_sub.min():.3f}, {y_sub.max():.3f}]\n")
 
 # =============================================================================
 # 2. Fitness Function (The Bi-Level Optimization)
@@ -235,8 +238,8 @@ n_opt_features = X_sub.shape[1]
 start_theta = np.concatenate([[np.log(10)], [0.0], np.ones(n_opt_features)])
 sigma_iter = 0.5 # Step size for exploration
 
-print("\nStarting CMA-ES Optimization...")
-print("Optimizing Window Size, Kernel Width (Sigma) and Feature Mask...")
+results_file.write("\nStarting CMA-ES Optimization...\n")
+results_file.write("Optimizing Window Size, Kernel Width (Sigma) and Feature Mask...\n")
 
 # Run CMA-ES
 # options={'maxiter': 50} limits the run time. Increase for better results.
@@ -261,6 +264,15 @@ selected_indices = np.where(final_mask)[0]
 print("\n" + "="*50)
 print(" OPTIMIZATION RESULTS")
 print("="*50)
+results_file.write("\n" + "="*50 + "\n")
+results_file.write(" OPTIMIZATION RESULTS\n")
+results_file.write("="*50 + "\n")
+results_file.write(f"Best Validation RMSE (approx): {best_fitness:.4f}\n")
+results_file.write(f"Optimal Window Size: {final_window_size}\n")
+results_file.write(f"Optimal Sigma: {final_sigma:.4f} (Gamma: {final_gamma:.4f})\n")
+results_file.write(f"Selected Features: {len(selected_indices)} out of {n_opt_features}\n")
+results_file.write(f"Feature Indices: {selected_indices}\n")
+
 print(f"Best Validation RMSE (approx): {best_fitness:.4f}")
 print(f"Optimal Window Size: {final_window_size}")
 print(f"Optimal Sigma: {final_sigma:.4f} (Gamma: {final_gamma:.4f})")
@@ -269,6 +281,7 @@ print(f"Feature Indices: {selected_indices}")
 
 # --- Retrain on FULL Training Set ---
 print("\nRetraining Final Model on FULL dataset...")
+results_file.write("\nRetraining Final Model on FULL dataset...\n")
 
 # Apply feature mask first
 X_train_masked = X_train_full[:, final_mask]
@@ -300,8 +313,21 @@ print(f"FINAL TEST R^2:  {r_squared:.4f}")
 print(f"Sparsity: {n_rv} Relevance Vectors (from {len(X_train_final)} samples)")
 print("-" * 30)
 
+results_file.write("-" * 30 + "\n")
+results_file.write(f"FINAL TEST RMSE: {test_rmse:.4f}\n")
+results_file.write(f"FINAL TEST R^2:  {r_squared:.4f}\n")
+results_file.write(f"Sparsity: {n_rv} Relevance Vectors (from {len(X_train_final)} samples)\n")
+results_file.write("-" * 30 + "\n\n")
+
 # Example of obtaining predictive variance (Uncertainty)
 # RVR provides MSE; std = sqrt(MSE)
 _, test_mse = final_model.predict(X_test_final, eval_MSE=True)
 test_std = np.sqrt(test_mse)
+
+results_file.write(f"Avg Predictive Uncertainty (StdDev): {np.mean(test_std):.4f}\n")
+
 print(f"Avg Predictive Uncertainty (StdDev): {np.mean(test_std):.4f}")
+
+# Close results file
+results_file.close()
+print("\nResults saved to optimization_results.txt")
