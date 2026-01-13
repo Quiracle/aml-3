@@ -1,0 +1,16 @@
+[project]
+name = "aml-2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cma>=4.4.1",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.8.0",
+    "scikit-rvm",
+    "sklearn-rvm>=0.1.1",
+]
+
+[tool.uv.sources]
+scikit-rvm = { git = "https://github.com/JamesRitchie/scikit-rvm.git" }
