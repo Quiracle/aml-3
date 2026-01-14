@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 # 1. Data Preparation
 # =============================================================================
 
-def load_and_prep_data():
+def load_and_prep_data(filename="train_FD001.txt", clip_rul=True, max_rul=150):
     """
     Load and prepare NASA CMAPSS FD001 dataset.
     
@@ -26,7 +26,7 @@ def load_and_prep_data():
     
     # --- Load Training Data ---
     fd1 = pd.read_csv(
-        "train_FD001.txt",
+        filename,
         sep=r"\s+",
         header=None,
         names=col_names,
@@ -42,6 +42,9 @@ def load_and_prep_data():
     # Merge back and calculate RUL
     fd1 = fd1.merge(max_time_cycles, on="unit_number", how="left")
     fd1["RUL"] = fd1["time_cycles_max"] - fd1["time_cycles"]
+
+    if clip_rul:
+        fd1["RUL"] = fd1["RUL"].clip(upper=max_rul)
     
     # --- Extract Features and Target ---
     # Use only sensor features (s_1 to s_21), exclude settings
@@ -59,6 +62,22 @@ def clean_data(X):
     selector = (X.var(axis=0) > 1e-6)
     X_clean = X[:, selector]
     return X_clean, selector
+
+def nasa_scoring_function(y_true, y_pred):
+    """
+    Asymmetric scoring function for PHM 2008 Challenge.
+    Penalizes late predictions (d > 0) more than early predictions (d < 0).
+    """
+    d = y_pred - y_true
+    score = 0
+    for diff in d:
+        if diff < 0:
+            # Predicción temprana (menos grave)
+            score += np.exp(-diff / 13) - 1
+        else:
+            # Predicción tardía (peligrosa)
+            score += np.exp(diff / 10) - 1
+    return score
 
 def create_windowed_features(X, window_size):
     """
@@ -226,6 +245,45 @@ def rvm_fitness(theta):
         print(f"RVM fitness error: {e}")
         return PENALTY
 
+import matplotlib.pyplot as plt
+
+def plot_rvm_results(y_true, y_pred, y_std, sample_size=100):
+    """
+    Plotea una muestra de predicciones con su intervalo de confianza.
+    """
+    # Cogemos una muestra aleatoria o los primeros N para que el plot se entienda
+    indices = np.arange(len(y_true))
+    if len(y_true) > sample_size:
+        indices = indices[:sample_size] # O np.random.choice si prefieres
+    
+    plt.figure(figsize=(12, 6))
+    
+    # Datos reales
+    plt.plot(indices, y_true[indices], 'r-', label='Real RUL', linewidth=2)
+    
+    # Predicción
+    plt.plot(indices, y_pred[indices], 'b--', label='RVM Prediction')
+    
+    # Intervalo de confianza (La magia de la RVM)
+    # sigma (y_std) viene de sqrt(predictive_variance)
+    plt.fill_between(indices, 
+                     y_pred[indices] - 1.96 * y_std[indices], 
+                     y_pred[indices] + 1.96 * y_std[indices], 
+                     color='blue', alpha=0.2, label='95% Confidence Interval')
+    
+    plt.title(f"RVM RUL Prediction with Uncertainty (First {sample_size} test points)")
+    plt.xlabel("Time Steps (Test Sample Index)")
+    plt.ylabel("Remaining Useful Life (Cycles)")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    # Guardar imagen
+    plt.savefig("RVM_Prediction_With_Uncertainty.png", dpi=300)
+    print("Gráfico guardado como 'RVM_Prediction_With_Uncertainty.png'")
+    plt.show()
+
+
+
 # =============================================================================
 # 3. Run CMA-ES (Outer Loop)
 # =============================================================================
@@ -323,6 +381,12 @@ results_file.write("-" * 30 + "\n\n")
 # RVR provides MSE; std = sqrt(MSE)
 _, test_mse = final_model.predict(X_test_final, eval_MSE=True)
 test_std = np.sqrt(test_mse)
+
+score = nasa_scoring_function(y_test_final, test_preds)
+print(f"NASA CMAPSS Score: {score:.4f}")
+results_file.write(f"NASA CMAPSS Score: {score:.4f}\n")
+
+plot_rvm_results(y_test_final, test_preds, test_std, sample_size=150)
 
 results_file.write(f"Avg Predictive Uncertainty (StdDev): {np.mean(test_std):.4f}\n")
 
