@@ -249,23 +249,17 @@ import matplotlib.pyplot as plt
 
 def plot_rvm_results(y_true, y_pred, y_std, sample_size=100):
     """
-    Plotea una muestra de predicciones con su intervalo de confianza.
+    Plot a sample of predictions with their confidence interval.
     """
-    # Cogemos una muestra aleatoria o los primeros N para que el plot se entienda
     indices = np.arange(len(y_true))
     if len(y_true) > sample_size:
-        indices = indices[:sample_size] # O np.random.choice si prefieres
+        indices = indices[:sample_size]
     
     plt.figure(figsize=(12, 6))
     
-    # Datos reales
     plt.plot(indices, y_true[indices], 'r-', label='Real RUL', linewidth=2)
-    
-    # Predicción
     plt.plot(indices, y_pred[indices], 'b--', label='RVM Prediction')
     
-    # Intervalo de confianza (La magia de la RVM)
-    # sigma (y_std) viene de sqrt(predictive_variance)
     plt.fill_between(indices, 
                      y_pred[indices] - 1.96 * y_std[indices], 
                      y_pred[indices] + 1.96 * y_std[indices], 
@@ -277,9 +271,9 @@ def plot_rvm_results(y_true, y_pred, y_std, sample_size=100):
     plt.legend()
     plt.grid(True, alpha=0.3)
     
-    # Guardar imagen
+    # Save image
     plt.savefig("RVM_Prediction_With_Uncertainty.png", dpi=300)
-    print("Gráfico guardado como 'RVM_Prediction_With_Uncertainty.png'")
+    print("Plot saved as 'RVM_Prediction_With_Uncertainty.png'")
     plt.show()
 
 
