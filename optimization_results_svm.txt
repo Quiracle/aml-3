@@ -3,7 +3,7 @@ Optimization will run on subset size: 300
 
 NaN values in X_sub: 0, y_sub: 0
 Inf values in X_sub: 0, y_sub: 0
-Data ranges - X_sub: [-7.058, 5.665], y_sub: [0.000, 150.000]
+Data ranges - X_sub: [-7.058, 5.467], y_sub: [0.000, 150.000]
 
 Starting CMA-ES Optimization...
 Optimizing Window Size, Kernel Width (Sigma) and Feature Mask...
@@ -11,18 +11,18 @@ Optimizing Window Size, Kernel Width (Sigma) and Feature Mask...
 ==================================================
  OPTIMIZATION RESULTS
 ==================================================
-Best Validation RMSE (approx): 25.3851
+Best Validation RMSE (approx): 25.2444
 Optimal Window Size: 1
-Optimal Sigma: 6.7759 (Gamma: 0.0109)
-Selected Features: 12 out of 15
-Feature Indices: [ 0  2  3  4  5  6  7  8  9 10 11 13]
+Optimal Sigma: 4.0448 (Gamma: 0.0306)
+Selected Features: 13 out of 15
+Feature Indices: [ 0  1  2  4  5  6  7  8  9 10 12 13 14]
 
 Retraining Final Model on FULL dataset...
 ------------------------------
-FINAL TEST RMSE: 24.3534
-FINAL TEST R^2:  0.7589
-Sparsity: 37 Relevance Vectors (from 12378 samples)
+FINAL TEST RMSE: 24.0636
+FINAL TEST R^2:  0.7646
+Sparsity: 46 Relevance Vectors (from 12378 samples)
 ------------------------------
 
-NASA CMAPSS Score: 132143.7884
-Avg Predictive Uncertainty (StdDev): 23.9707
+NASA CMAPSS Score: 133939.7212
+Avg Predictive Uncertainty (StdDev): 23.5467
